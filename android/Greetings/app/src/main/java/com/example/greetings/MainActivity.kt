@@ -5,23 +5,26 @@ import android.se.omapi.SEService
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.greetings.ui.theme.GreetingsTheme
 import java.util.concurrent.Executor
 
 
-class MainActivity : ComponentActivity(), SEService.OnConnectedListener, Executor {
-
-    val LOG_TAG = "HelloSmartcard"
-
-    private var seService: SEService? = null
+class MainActivity : ComponentActivity() {
 
     init {
         Log.i("init", "loading lib")
@@ -61,18 +64,14 @@ class MainActivity : ComponentActivity(), SEService.OnConnectedListener, Executo
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting(r)
+                    Column {
+                        Greeting(name = "j&s-soft")
+                        GenerateKeyButton()
+                        EncryptTest()
+                    }
                 }
             }
         }
-    }
-
-    override fun onConnected() {
-        Log.i(LOG_TAG, "seviceConnected()")
-    }
-
-    override fun execute(command: Runnable?) {
-        command!!.run()
     }
 }
 
@@ -85,19 +84,32 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun RunButton(t: String, e: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick = { onClick() },
-        enabled = e
-    ) {
-        Text(text = t)
+fun GenerateKeyButton() {
+    Button(onClick = { CryptoLayer.generateNewKey() }) {
+        Text("Generate")
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    GreetingsTheme {
-        Greeting("Android")
+fun EncryptTest() {
+    var text by remember { mutableStateOf("Hello World") }
+    var encText by remember { mutableStateOf("") }
+    Column {
+        TextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text("Message") }
+        )
+        Button(onClick = {
+            encText = CryptoLayer.encryptText("test123")
+            Log.i("button", "Encrypted text: $encText")
+        }) {
+            Text("Encrypt")
+        }
+        TextField(
+            value = encText,
+            onValueChange = {},
+            enabled = false,
+        )
     }
 }

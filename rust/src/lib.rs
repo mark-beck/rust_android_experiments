@@ -10,7 +10,7 @@ use logger::JavaLogger;
 mod keystore;
 mod logger;
 
-pub fn rust_greeting(to: *const c_char) -> Result<*mut c_char> {
+pub fn rust_greeting(to: *const c_char) -> Result<CString> {
     let c_str = unsafe { CStr::from_ptr(to) };
     let recipient = match c_str.to_str() {
         Err(_) => "there",
@@ -27,11 +27,10 @@ pub fn rust_greeting(to: *const c_char) -> Result<*mut c_char> {
         .expect("Unable to log message");
 
     Ok(CString::new("Hello ".to_owned() + recipient)
-        .unwrap()
-        .into_raw())
+        .unwrap())
 }
 
-fn get_java_vm<'a>() -> anyhow::Result<JavaVM> {
+fn get_java_vm() -> anyhow::Result<JavaVM> {
     // using jni_sys::JNI_GetCreatedJavaVMs crashes, bc the symbol is not loaded into the process for some reason
     // instead we use libloading to load the symbol ourselves
     pub type JniGetCreatedJavaVms = unsafe extern "system" fn(
@@ -65,40 +64,4 @@ fn get_java_vm<'a>() -> anyhow::Result<JavaVM> {
     Ok(jvm)
 }
 
-#[cfg(target_os = "android")]
-#[allow(non_snake_case)]
-pub mod android {
-    extern crate jni;
-
-    use self::jni::objects::{JClass, JString};
-    use self::jni::sys::jstring;
-    use self::jni::JNIEnv;
-    use super::*;
-
-    #[no_mangle]
-    pub unsafe extern "C" fn Java_com_example_greetings_RustGreetings_greeting(
-        mut env: JNIEnv,
-        _: JClass,
-        java_pattern: JString,
-    ) -> jstring {
-        // Our Java companion code might pass-in "world" as a string, hence the name.
-
-        let world = match rust_greeting(
-            env.get_string(&java_pattern)
-                .expect("invalid pattern string")
-                .as_ptr(),
-        ) {
-            Ok(res) => res,
-            Err(_) => {
-                CString::new("Error in rust_greeting").unwrap().into_raw()
-            }
-        };
-        // Retake pointer so that we can use it below and allow memory to be freed when it goes out of scope.
-        let world_ptr = CString::from_raw(world);
-        let output = env
-            .new_string(world_ptr.to_str().unwrap())
-            .expect("Couldn't create java string!");
-
-        **output
-    }
-}
+pub mod android;
