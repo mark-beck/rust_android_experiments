@@ -85,7 +85,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun GenerateKeyButton() {
-    Button(onClick = { CryptoLayer.generateNewKey() }) {
+    Button(onClick = { CryptoLayerRust.generateNewKey() }) {
         Text("Generate")
     }
 }
@@ -101,7 +101,7 @@ fun EncryptTest() {
             label = { Text("Message") }
         )
         Button(onClick = {
-            encText = CryptoLayer.encryptText("test123")
+            encText = CryptoLayerRust.encryptText(text)
             Log.i("button", "Encrypted text: $encText")
         }) {
             Text("Encrypt")
@@ -111,5 +111,11 @@ fun EncryptTest() {
             onValueChange = {},
             enabled = false,
         )
+        Button(onClick = {
+            var dec = CryptoLayerRust.decryptText(encText)
+            encText = dec
+        }) {
+            Text("Decrypt")
+        }
     }
 }
