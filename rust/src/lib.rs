@@ -9,6 +9,7 @@ use logger::JavaLogger;
 
 mod keystore;
 mod logger;
+mod wrapper;
 
 pub fn rust_greeting(to: *const c_char) -> Result<CString> {
     let c_str = unsafe { CStr::from_ptr(to) };
